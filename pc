@@ -1,8 +1,9 @@
 #!/usr/bin/perl
+# Copyright (c) 2003-2009 David Caldwell -*- cperl -*-
 
 use strict;
 use warnings;
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 sub revstr($) { join "", reverse split //, $_[0] } # Reverse the characters in a string.
 sub comma($$) { revstr join(",", unpack("(A$_[1])*", revstr($_[0]))) }
@@ -59,7 +60,7 @@ __END__
 
 =head1 NAME
 
-PC - Perl Calculator
+PC - A simple but feature filled command line Perl calculator
 
 =head1 SYNOPSIS
 
@@ -70,7 +71,7 @@ PC - Perl Calculator
 C<pc> is a quick and dirty command line perl calculator. Pass it an
 expression on the command line and it will print the result in a number of
 different formats. You can also run C<pc> with no command line parameters
-and it will run an interactive loop (using C<Term::ReadLine> if you have it
+and it will run an interactive loop (using C<L<Term::ReadLine>> if you have it
 installed).
 
 C<pc> is designed to give you all the output you ever could want without
@@ -87,7 +88,9 @@ you. Same with the fractions.
   14 0xe 016
 
 The first number is the integer result, followed by the hex and octal
-representations. Simple enough.  Order of operations
+representations. Simple enough.
+
+=head2 Order of operations
 
 This shows that C<pc> uses Perl's order of operations (operator precedence if
 you are in a programming mood):
@@ -138,13 +141,14 @@ uses Perl's "bigrat" library to do fractions:
   $ pc 1000*2000
   2,000,000 2000000 0x1e,8480 0x1e8480 07502200 1.90MB
 
-
-You'll notice that the integer and hex results are printed twice—one with
+You'll notice that the integer and hex results are printed twice--one with
 commas and one without. The one with commas is so that you the human can
 read the output easily. The one without commas is for copying and
 pasting. You should also notice that C<pc> helpfully told you the number was
 1.90MB. If a number is bigger than 1024 (1KB) it will print it in human
-readable byte quantity.  Power of 2 magnitude suffixes
+readable byte quantity.
+
+=head2 Power of 2 magnitude suffixes
 
 It also accepts magnitude suffixes on the input:
 
@@ -176,12 +180,19 @@ C<pc> uses Perl's bigint so that it can handle numbers bigger than 32 bits:
 Since C<pc> uses Perl's eval you can do arbitrary perl code too. Though frankly
 the only thing I've ever used is ord().
 
-=head1 AUTHOR
-
-David Caldwell  (david@porkrind.org)
-
 =head1 SEE ALSO
 
 L<http://porkrind.org/missives/pc-perl-calculator>
+
+=head1 COPYRIGHT
+
+This library is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+Copyright (C) 2003-2009 David Caldwell
+
+=head1 AUTHOR
+
+David Caldwell <david@porkrind.org>
 
 =cut
