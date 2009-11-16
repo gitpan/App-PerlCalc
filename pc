@@ -3,19 +3,20 @@
 
 use strict;
 use warnings;
-our $VERSION = '1.0.2';
+our $VERSION = '1.1.0';
 
 sub revstr($) { join "", reverse split //, $_[0] } # Reverse the characters in a string.
 sub comma($$) { revstr join(",", unpack("(A$_[1])*", revstr($_[0]))) }
 
 sub compute ($) {
-    $_[0] =~ s/\b([\d.]+)([kmgtpezy])/($1*1024**(index("kmgtpezy","$2")+1))/g;
-    my $i = eval("use bigint; $_[0]");
-    my $n = eval("use bignum; $_[0]");
-    my $r = eval("use bigrat; $_[0]");
+    $_[0] =~ s/\b([\d.]+)([kmgtpezyKMGTPEZY])[bB]?/($1*1024**(index("kmgtpezy",lc "$2")+1))/g;
     my $a = eval($_[0]); die unless defined $a;
+    my $i = eval("use bigint; $_[0];"); $i = $a unless defined $i;
+    my $n = eval("use bignum; $_[0];"); $n = $a unless defined $n;
+    my $r = eval("use bigrat; $_[0];"); $r = $a unless defined $r;
     my $is = "";
     eval { $is = $i->copy()->bfloor().""; };
+    $is = int $i if $@;
     my $hs = eval { $i->as_hex; } || sprintf "%#x", $i;
     my $ic = comma($is,3);
     my $hc = "0x". comma(($hs =~ /0x(.*)/)[0], 4);
@@ -24,12 +25,23 @@ sub compute ($) {
     print " $hc";
     print " $hs" if $hc ne $hs;
     printf " %#o", $a;
-    if ($i > 1024) {
+    if ($n > 1024) {
         use POSIX;
-        my $exp = POSIX::floor(log($a)/log(1024));
-        my $s = $a / (1024**$exp);
-        $s =~ s/([\d.]{4}).*/$1/;
-        print " $s", [qw(B KB MB GB TB PB EB)]->[$exp];
+        use List::Util 'min';
+        my @pow2 = qw(B KB MB GB TB PB EB ZB YB);
+        # This is weird beause we can't use a bigint directly since log(bigint(1<<400))
+        # takes hours (literally). So we convert into a perl scalar so we can use fast
+        # floating point log() (the precision we lose going to a scalar doesn't matter
+        # in the context of log()) and then convert back to a bigint for the pow().
+        my $exp = Math::BigFloat->new(min($#pow2, POSIX::floor(log($n->numify)/log(1024))));
+        my $coeff = $n / (1024 ** $exp);
+        if ($coeff >= 100000) {
+            printf " %6.2e%s", $coeff, $pow2[$exp];
+        } elsif ($coeff->copy->bfloor() * 1024 ** $exp == $n) {
+            print " $coeff",$pow2[$exp];
+        } else {
+            printf " %.2f%s", $coeff, $pow2[$exp];
+        }
     }
     printf " %.15s",$n if $is ne $n."";
     print  " $r"       if $is ne $r."" && $n."" ne $r."";
@@ -155,9 +167,10 @@ It also accepts magnitude suffixes on the input:
   $ pc 16m
   16,777,216 16777216 0x100,0000 0x1000000 0100000000 16MB
 
-The following suffixes are allowed: kmgtpezy (lowercase, no b). Note that
-the human readable output "16MB" doesn't have a decimal point. It will
-remove the decimal point if the number is exactly that value. So:
+The following suffixes are allowed: kmgtpezy (lower or upper case, with or
+without a trailing "b"). Note that the human readable output "16MB" doesn't
+have a decimal point. It will remove the decimal point if the number is
+exactly that value. So:
 
   $ pc 16m+1
   16,777,217 16777217 0x100,0001 0x1000001 0100000001 16.0MB
