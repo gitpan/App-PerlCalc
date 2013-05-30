@@ -1,7 +1,14 @@
+if (-d ".git") { # Are we in our development tree? If so, create MANIFEST.
+    my ($dir, $manifest);
+    open $manifest, ">", "MANIFEST" or die "MANIFEST: $!";
+    print $manifest "MANIFEST\n";
+    open $dir, '-|', 'git', 'ls-files' or die "Couldn't run git: $!";
+    while (<$dir>) { print $manifest $_ unless /^\./ }
+}
+
 use Module::Build;
 Module::Build->new(
     module_name => 'App::PerlCalc',
-    dist_version_from => 'pc',
     license     => 'perl',
     dist_author => 'David Caldwell <david@porkrind.org>',
     requires      => {
